@@ -1,0 +1,113 @@
+[gd_scene load_steps=6 format=3 uid="uid://blfvt16xflk7r"]
+
+[ext_resource type="Script" uid="uid://b4wgnuq554jk7" path="res://main.gd" id="1_ig7tw"]
+[ext_resource type="Texture2D" uid="uid://cy87rjfoifp6p" path="res://loadarrow.png" id="2_0xm2m"]
+
+[sub_resource type="GDScript" id="GDScript_h2yge"]
+script/source = "extends Button
+
+func _ready() -> void:
+	button_down.connect(func():DisplayServer.file_dialog_show(\"Choose a dz file\" , \"\" , \"\" , true , DisplayServer.FILE_DIALOG_MODE_OPEN_FILE , [\"*.dz\"] , redirect))
+
+func redirect(status: bool, selected_paths: PackedStringArray, _selected_filter_index: int) -> void:
+	if not status: return ## If canceled
+	global.dzip_decompile(selected_paths[0])
+"
+
+[sub_resource type="GDScript" id="GDScript_1bvp3"]
+script/source = "extends Button
+
+func _ready() -> void:
+	button_down.connect(func():DisplayServer.file_dialog_show(\"Choose a folder to compile\" , \"\" , \"\" , true , DisplayServer.FILE_DIALOG_MODE_OPEN_DIR , [] , redirect))
+
+func redirect(status: bool, selected_paths: PackedStringArray, _selected_filter_index: int) -> void:
+	if not status: return ## If canceled
+	global.dzip_compile(selected_paths[0])
+"
+
+[sub_resource type="GDScript" id="GDScript_0xm2m"]
+script/source = "extends TextureRect
+## Stupid rotating arrow :cattongue:
+
+func _physics_process(delta: float) -> void:
+	visible = global.is_process_running
+	if not visible: return
+
+	rotation += deg_to_rad(15)
+"
+
+[node name="Control" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ig7tw")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PanelContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 12
+text = "EzDzip by Thelastcube
+
+Drop an folder to compile it into a dz
+Drop an dz file to decompile it."
+
+[node name="Label2" type="Label" parent="PanelContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 10
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 33
+text = "EzDzip"
+
+[node name="Choose" type="Button" parent="PanelContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 108.15)
+layout_mode = 2
+size_flags_vertical = 10
+text = "Decompile a DZ file"
+script = SubResource("GDScript_h2yge")
+
+[node name="Choose2" type="Button" parent="PanelContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 108.15)
+layout_mode = 2
+size_flags_vertical = 10
+text = "Compile a folder to a DZ file"
+script = SubResource("GDScript_1bvp3")
+
+[node name="Label3" type="Label" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 10
+theme_override_font_sizes/font_size = 12
+text = "Warning:
+If you close the app before an process is over, temporary files won't be deleted."
+
+[node name="TextureRect" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.514
+anchor_right = 0.514
+offset_left = -128.00002
+offset_top = -96.0
+offset_right = 128.0
+offset_bottom = 160.0
+scale = Vector2(0.14943099, 0.14943099)
+pivot_offset = Vector2(128, 128)
+texture = ExtResource("2_0xm2m")
+script = SubResource("GDScript_0xm2m")
