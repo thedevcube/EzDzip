@@ -60,7 +60,7 @@ func dzip_compile(path_to_folder: String , warn := true) -> Error:
 ## Setup all the files on config dcl and close it
 	for file in get_all_files_in_a_folder(path_to_folder):
 		print(file)
-		config += '\nfile "%s" 0 zlib' % file
+		config += "\nfile %s 0 dz" % file
 	#print("\nConfig file content: '%s'\n" % config)
 
 	configdcl.store_string(config)
@@ -68,15 +68,17 @@ func dzip_compile(path_to_folder: String , warn := true) -> Error:
 
 ## Run dzip on configdcl
 	var thread = Thread.new()
-	var result = OS.execute_with_pipe("cmd.exe" , ["/C" , 'cd %s&&dzip dc.dcl' % path_to_folder.get_base_dir()] , false)
+	var execute_lambda = func() -> int: return OS.execute("cmd.exe" , ["/C" , 'cd %s&&dzip dc.dcl' % path_to_folder.get_base_dir()] , [] , true)
+	#thread.start(execute_lambda)
+	var result = thread.start(execute_lambda)
 
 	is_process_running = true
 	print(result)
-	if result.is_empty(): OS.alert("Something went wrong while running CMD"); return FAILED
+	if result == -1: OS.alert("Something went wrong while running CMD"); return FAILED
 
 ## Watch the cmd (read the decompile one for more details)
 	compile_thread = Thread.new()
-	var threadcheck = compile_thread.start(watch_thread.bind(result["pid"] , func(): compile_success.emit(); remove_dzip(); remove_dcl(); if warn: OS.alert("The dz file has been compiled.") , func(): OS.alert("An error occured while compiling"); get_window().always_on_top = true; remove_dzip(); remove_dcl()))
+	var threadcheck = compile_thread.start(watch_thread.bind(result["pid"] , func(): compile_success.emit(); remove_dzip(); remove_dcl(); if warn: OS.alert("The dz file has been compiled.") , func(): OS.alert("An error occured while compiling, stdio: " + str((result["stdio"] as FileAccess).get_as_text())); get_window().always_on_top = true; remove_dzip(); remove_dcl()))
 	if threadcheck != OK: get_window().always_on_top = true; return FAILED
 
 	get_window().always_on_top = true
@@ -91,7 +93,6 @@ func watch_thread(pid: int , callback: Callable , error_fallback: Callable) -> v
 ## Function to run outside of the thread cuz it crahses if we dont
 	callback.call_deferred(); set_deferred("is_process_running" , false)
 
-## Iterates through every file of a folder, if this folder has folders get the relative path to their files by iterating through them too
 func get_all_files_in_a_folder(folder: String , relative_path = "") -> Array[String]:
 	var array: Array[String]
 	for file in DirAccess.get_files_at(folder):

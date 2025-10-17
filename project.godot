@@ -13,7 +13,6 @@ config_version=5
 config/name="EzDzip"
 run/main_scene="uid://blfvt16xflk7r"
 config/features=PackedStringArray("4.5", "GL Compatibility")
-run/low_processor_mode=true
 boot_splash/show_image=false
 boot_splash/fullsize=false
 boot_splash/use_filter=false
@@ -27,6 +26,7 @@ global="*res://autoload.gd"
 
 window/size/viewport_width=500
 window/size/viewport_height=500
+window/size/always_on_top=true
 
 [gui]
 

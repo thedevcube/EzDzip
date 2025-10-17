@@ -67,7 +67,8 @@ theme_override_font_sizes/font_size = 12
 text = "EzDzip by Thelastcube
 
 Drop an folder to compile it into a dz
-Drop an dz file to decompile it."
+Drop an dz file to decompile it.
+Drop multiple files to turn them into a dz file"
 
 [node name="Label2" type="Label" parent="PanelContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
@@ -95,8 +96,9 @@ layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 10
 theme_override_font_sizes/font_size = 12
-text = "Warning:
-If you close the app before an process is over, temporary files won't be deleted."
+text = "Warnings:
+If you close the app before an process is over, temporary files won't be deleted
+AND the process will still run."
 
 [node name="TextureRect" type="TextureRect" parent="."]
 layout_mode = 1
