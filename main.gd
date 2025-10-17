@@ -2,12 +2,27 @@ extends Control
 class_name Main
 
 func _ready():
+	if "-decompile" in OS.get_cmdline_args() or "-compile" in OS.get_cmdline_args():
+		var files: PackedStringArray
+		for file in OS.get_cmdline_args():
+			if "-" in file: continue
+			files.append(file)
+
+		if "-decompile" in OS.get_cmdline_args():
+			#if global.dzip_decompile(OS.get_cmdline_args()[1]) != OK: global.OS_alert_dontoverlap("Something went wrong while trying to quick extract."); get_tree().quit()
+			process_files(files , forcemode.DECOMRPESS)
+			await global.decompile_success; get_tree().quit()
+		if "-compile" in OS.get_cmdline_args():
+			#\if global.dzip_compile(OS.get_cmdline_args()[1]) != OK: global.OS_alert_dontoverlap("Something went wrong while trying to quick compress."); get_tree().quit()
+			process_files(files , forcemode.COMPRESS)
+			await global.compile_success; get_tree().quit()
+
 	global.main_object = self
-	get_window().files_dropped.connect(on_files_dropped)
+	get_window().files_dropped.connect(process_files)
 
 
-
-func on_files_dropped(files: PackedStringArray):
+enum forcemode{NONE , COMPRESS , DECOMRPESS}
+func process_files(files: PackedStringArray , mode: forcemode = forcemode.NONE):
 
 	var multiple_files = (files.size() > 1)
 
@@ -29,28 +44,29 @@ func on_files_dropped(files: PackedStringArray):
 			#DisplayServer.file_dialog_show("Open the DZ" , "" , "" , true , DisplayServer.FILE_DIALOG_MODE_OPEN_FILE , ["*.dz"] , callback)
 
 ## Handle error cases
-		if not file.get_extension().is_empty() and file.get_extension() != "dz": OS.alert("The file you dropped isn't a dz file nor an folder."); return
-		if file.get_extension().is_empty(): global.dzip_compile(file)
-		else: global.dzip_decompile(file)
+		if not file.get_extension().is_empty() and file.get_extension() != "dz": global.OS_alert_dontoverlap("The file you dropped isn't a dz file nor an folder."); return
+		if file.get_extension().is_empty() and mode == forcemode.COMPRESS or mode == forcemode.NONE: global.dzip_compile(file)
+		elif mode == forcemode.DECOMRPESS or mode == forcemode.NONE: global.dzip_decompile(file)
 
 	else:
 		print("Running multiple files")
 		var filename = []
 		var callback = func(s: String): filename.append(s)
-		get_window().always_on_top = false    # Error messages get behind the main window if i dont do this
+		get_window().always_on_top = false
 		DisplayServer.dialog_input_text("Set dz name" , "Insert dz name" , "" , callback)
+		get_window().always_on_top = true
 ## Temporary folder whose these files will be copied to to be compiled
 		var new_folder = DirAccess.make_dir_absolute(files[0].get_base_dir() + "/temp_ezdzip/")
-		if new_folder != OK: OS.alert("Error while creating temporary ezdzip folder."); return
+		if new_folder != OK: global.OS_alert_dontoverlap("Error while creating temporary ezdzip folder."); return
  
 ## Copy those files to the temporary folder
 		for dfile in files:
 			var r = DirAccess.copy_absolute(dfile , files[0].get_base_dir() + "/temp_ezdzip/" + dfile.get_file())
 			if r != OK: 
-				get_window().always_on_top = true; OS.alert("Something went wrong while copying files to temporary folder."); return
+				global.OS_alert_dontoverlap("Something went wrong while copying files to temporary folder."); return
 
 ## Compiles the folder whilst checking if it gone wrong to return, if it doesnt, wait for it to compile and rename the  folder to the name the user input
-		if global.dzip_compile(files[0].get_base_dir() + "/temp_ezdzip") != OK: OS.alert("Something went wrong while trying to compile to dz."); get_window().always_on_top = true; return
+		if (mode == forcemode.COMPRESS or mode == forcemode.NONE): if global.dzip_compile(files[0].get_base_dir() + "/temp_ezdzip") != OK: global.OS_alert_dontoverlap("Something went wrong while trying to compile to dz."); return
 		await global.compile_success
 		DirAccess.rename_absolute(files[0].get_base_dir() + "/temp_ezdzip.dz" , files[0].get_base_dir() + "/" + filename[0] + ".dz")
 
@@ -60,4 +76,3 @@ func on_files_dropped(files: PackedStringArray):
 			DirAccess.remove_absolute(files[0].get_base_dir() + "/temp_ezdzip/" + dirfile)
 
 		DirAccess.remove_absolute(files[0].get_base_dir() + "/temp_ezdzip")
-		get_window().always_on_top = true

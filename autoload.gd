@@ -1,7 +1,5 @@
 extends Node
 
-
-
 signal decompile_success
 signal compile_success
 
@@ -13,16 +11,21 @@ var is_process_running := false
 var decompile_thread: Thread
 var compile_thread: Thread
 
+## Redirected version of OS.alert so the main window dont get on front of the alert ones
+func OS_alert_dontoverlap(text: String , title: String = "Alert!"):
+	get_window().always_on_top = false
+	OS.alert(text , title)
+	get_window().always_on_top = true
+
 func remove_dzip() -> void:
 	var result = DirAccess.remove_absolute(current_path + "/dzip.exe")
-	if result != OK: OS.alert("Unable to delete temporary dzip.exe.")
+	if result != OK: OS_alert_dontoverlap("Unable to delete temporary dzip.exe.")
 
 func remove_dcl() -> void:
 	var result = DirAccess.remove_absolute(current_path + "/dc.dcl")
-	if result != OK: OS.alert("Unable to delete temporary dc.dcl. (dzip config file)")
+	if result != OK: OS_alert_dontoverlap("Unable to delete temporary dc.dcl. (dzip config file)")
 
 func dzip_decompile(path_to_file: String , warn := true) -> Error:
-	get_window().always_on_top = false
 	current_path = path_to_file.get_base_dir()
 	var path_to_dzip = path_to_file.get_base_dir() + "/dzip.exe"
 ## Create a new dzip.exe on the file's folder
@@ -35,16 +38,15 @@ func dzip_decompile(path_to_file: String , warn := true) -> Error:
 	var result = OS.execute_with_pipe("cmd.exe" , ["/C" , "cd %s&&dzip -d %s" % [path_to_file.get_base_dir() , path_to_file.get_file()]] , false)
 
 	is_process_running = true
-	if result.is_empty(): OS.alert("Something went wrong while decompiling %s" % path_to_file.get_file()); is_process_running = false; return FAILED
+	if result.is_empty(): OS_alert_dontoverlap("Something went wrong while decompiling %s" % path_to_file.get_file()); is_process_running = false; return FAILED
 
 ## Create a thread to watch the CMD process to check when it's completed
 	decompile_thread = Thread.new()
-	var threadcheck = decompile_thread.start(watch_thread.bind(result["pid"] , func(): decompile_success.emit(); remove_dzip(); if warn: OS.alert("The dz file has been decompiled.") , func(): remove_dzip(); OS.alert("An error occured while decompiling")))
+	var threadcheck = decompile_thread.start(watch_thread.bind(result["pid"] , func(): decompile_success.emit(); remove_dzip(); if warn: OS_alert_dontoverlap("The dz file has been decompiled.") , func(): remove_dzip(); OS_alert_dontoverlap("An error occured while decompiling")))
 	if threadcheck != OK: return FAILED
 	return OK
 
 func dzip_compile(path_to_folder: String , warn := true) -> Error:
-	get_window().always_on_top = false
 	current_path = path_to_folder.get_base_dir()
 	var path_to_dzip = path_to_folder.get_base_dir() + "/dzip.exe"
 ## Create a new dzip.exe on the file's folder
@@ -72,14 +74,13 @@ func dzip_compile(path_to_folder: String , warn := true) -> Error:
 
 	is_process_running = true
 	print(result)
-	if result.is_empty(): OS.alert("Something went wrong while running CMD"); return FAILED
+	if result.is_empty(): OS_alert_dontoverlap("Something went wrong while running CMD"); return FAILED
 
 ## Watch the cmd (read the decompile one for more details)
 	compile_thread = Thread.new()
-	var threadcheck = compile_thread.start(watch_thread.bind(result["pid"] , func(): compile_success.emit(); remove_dzip(); remove_dcl(); if warn: OS.alert("The dz file has been compiled.") , func(): OS.alert("An error occured while compiling"); get_window().always_on_top = true; remove_dzip(); remove_dcl()))
-	if threadcheck != OK: get_window().always_on_top = true; return FAILED
+	var threadcheck = compile_thread.start(watch_thread.bind(result["pid"] , func(): compile_success.emit(); remove_dzip(); remove_dcl(); if warn: OS_alert_dontoverlap("The dz file has been compiled.") , func(): OS_alert_dontoverlap("An error occured while compiling"); remove_dzip(); remove_dcl()))
+	if threadcheck != OK: return FAILED
 
-	get_window().always_on_top = true
 	return OK
 
 func watch_thread(pid: int , callback: Callable , error_fallback: Callable) -> void:
